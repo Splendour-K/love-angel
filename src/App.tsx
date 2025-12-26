@@ -6,6 +6,7 @@ import { ResponsiveHeader } from "@/components/ResponsiveHeader";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
+import { AdminAuthProvider } from "@/hooks/useAdminAuth";
 import Landing from "./pages/Landing";
 import Auth from "./pages/Auth";
 import Onboarding from "./pages/Onboarding";
@@ -20,6 +21,11 @@ import Safety from "./pages/Safety";
 import Contact from "./pages/Contact";
 import About from "./pages/About";
 import NotFound from "./pages/NotFound";
+import AdminLogin from "./pages/admin/AdminLogin";
+import AdminDashboard from "./pages/admin/AdminDashboard";
+import AdminMessages from "./pages/admin/AdminMessages";
+import AdminVerifications from "./pages/admin/AdminVerifications";
+import AdminUsers from "./pages/admin/AdminUsers";
 
 const queryClient = new QueryClient();
 
@@ -31,23 +37,34 @@ const App = () => (
         <Sonner />
         <BrowserRouter>
           <AuthProvider>
-            <ResponsiveHeader />
-            <Routes>
-              <Route path="/" element={<Landing />} />
-              <Route path="/auth" element={<Auth />} />
-              <Route path="/onboarding" element={<Onboarding />} />
-              <Route path="/discover" element={<Discover />} />
-              <Route path="/browse" element={<Browse />} />
-              <Route path="/matches" element={<Matches />} />
-              <Route path="/messages" element={<Messages />} />
-              <Route path="/messages/:conversationId" element={<Chat />} />
-              <Route path="/profile" element={<Profile />} />
-              <Route path="/privacy" element={<Privacy />} />
-              <Route path="/safety" element={<Safety />} />
-              <Route path="/contact" element={<Contact />} />
-              <Route path="/about" element={<About />} />
-              <Route path="*" element={<NotFound />} />
-            </Routes>
+            <AdminAuthProvider>
+              <Routes>
+                {/* Main App Routes */}
+                <Route path="/" element={<><ResponsiveHeader /><Landing /></>} />
+                <Route path="/auth" element={<><ResponsiveHeader /><Auth /></>} />
+                <Route path="/onboarding" element={<><ResponsiveHeader /><Onboarding /></>} />
+                <Route path="/discover" element={<><ResponsiveHeader /><Discover /></>} />
+                <Route path="/browse" element={<><ResponsiveHeader /><Browse /></>} />
+                <Route path="/matches" element={<><ResponsiveHeader /><Matches /></>} />
+                <Route path="/messages" element={<><ResponsiveHeader /><Messages /></>} />
+                <Route path="/messages/:conversationId" element={<><ResponsiveHeader /><Chat /></>} />
+                <Route path="/profile" element={<><ResponsiveHeader /><Profile /></>} />
+                <Route path="/privacy" element={<><ResponsiveHeader /><Privacy /></>} />
+                <Route path="/safety" element={<><ResponsiveHeader /><Safety /></>} />
+                <Route path="/contact" element={<><ResponsiveHeader /><Contact /></>} />
+                <Route path="/about" element={<><ResponsiveHeader /><About /></>} />
+                
+                {/* Admin Routes */}
+                <Route path="/admin/login" element={<AdminLogin />} />
+                <Route path="/admin" element={<AdminDashboard />}>
+                  <Route path="messages" element={<AdminMessages />} />
+                  <Route path="verifications" element={<AdminVerifications />} />
+                  <Route path="users" element={<AdminUsers />} />
+                </Route>
+                
+                <Route path="*" element={<><ResponsiveHeader /><NotFound /></>} />
+              </Routes>
+            </AdminAuthProvider>
           </AuthProvider>
         </BrowserRouter>
       </TooltipProvider>

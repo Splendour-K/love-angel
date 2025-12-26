@@ -10,10 +10,12 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { 
   Heart, User, Settings, LogOut, Camera, Edit2, Check, X, 
-  Shield, ChevronRight 
+  Shield, ChevronRight, BadgeCheck 
 } from 'lucide-react';
 import BottomNav from '@/components/BottomNav';
 import { PhotoUpload } from '@/components/PhotoUpload';
+import { IDVerification } from '@/components/IDVerification';
+import { VerifiedBadge } from '@/components/VerifiedBadge';
 
 interface ProfileData {
   display_name: string;
@@ -24,6 +26,7 @@ interface ProfileData {
   photos: string[];
   interests: string[];
   relationship_goal: string;
+  is_verified: boolean;
 }
 
 export default function Profile() {
@@ -67,6 +70,7 @@ export default function Profile() {
           photos: data.photos || [],
           interests: data.interests || [],
           relationship_goal: data.relationship_goal || '',
+          is_verified: data.is_verified || false,
         });
       }
     } catch (err) {
@@ -285,8 +289,9 @@ export default function Profile() {
               ) : (
                 <>
                   <div className="text-center">
-                    <h2 className="text-2xl font-display font-bold text-foreground">
+                    <h2 className="text-2xl font-display font-bold text-foreground flex items-center justify-center gap-2">
                       {profile.display_name || 'Anonymous'}
+                      {profile.is_verified && <VerifiedBadge size="md" />}
                     </h2>
                     <p className="text-muted-foreground">
                       {profile.course_of_study}
@@ -324,6 +329,15 @@ export default function Profile() {
                   )}
                 </>
               )}
+            </div>
+
+            {/* ID Verification Section */}
+            <div className="bg-card rounded-2xl p-6 shadow-card">
+              <h3 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
+                <BadgeCheck className="w-5 h-5 text-blue-500" />
+                ID Verification
+              </h3>
+              <IDVerification />
             </div>
 
             {/* Settings Menu */}

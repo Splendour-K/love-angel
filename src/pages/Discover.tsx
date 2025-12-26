@@ -7,6 +7,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Heart, X, Star, MessageCircle, User, Sparkles, ChevronLeft, ChevronRight, Info, ArrowLeft } from 'lucide-react';
 import BottomNav from '@/components/BottomNav';
+import { VerifiedBadge } from '@/components/VerifiedBadge';
 import {
   Dialog,
   DialogContent,
@@ -271,9 +272,7 @@ export default function Discover() {
                       )}
                     </h2>
                     {currentProfile.is_verified && (
-                      <span className="bg-primary/20 text-primary-foreground text-xs px-2 py-0.5 rounded-full">
-                        ✓ Verified
-                      </span>
+                      <VerifiedBadge size="md" />
                     )}
                   </div>
                   <p className="text-sm opacity-90 mb-2">
@@ -488,9 +487,7 @@ export default function Discover() {
                       )}
                     </h2>
                     {currentProfile.is_verified && (
-                      <span className="bg-primary/10 text-primary text-xs px-2 py-0.5 rounded-full">
-                        ✓ Verified
-                      </span>
+                      <VerifiedBadge size="md" />
                     )}
                   </div>
                   <p className="text-muted-foreground mt-1">
