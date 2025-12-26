@@ -141,7 +141,7 @@ export function ResponsiveHeader({ showNavigation = true }: ResponsiveHeaderProp
                     <User className="mr-2 h-4 w-4" />
                     <span>Profile</span>
                   </DropdownMenuItem>
-                  <DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => navigate('/settings')}>
                     <Settings className="mr-2 h-4 w-4" />
                     <span>Settings</span>
                   </DropdownMenuItem>
@@ -278,6 +278,10 @@ export function ResponsiveHeader({ showNavigation = true }: ResponsiveHeaderProp
                       <Button
                         variant="ghost"
                         className="w-full justify-start gap-3 h-auto p-3"
+                        onClick={() => {
+                          navigate('/settings');
+                          setIsOpen(false);
+                        }}
                       >
                         <Settings className="w-5 h-5" />
                         <div className="text-left">

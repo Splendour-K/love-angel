@@ -346,7 +346,7 @@ export default function Profile() {
             <div className="bg-card rounded-2xl shadow-card overflow-hidden">
               <button
                 className="w-full p-4 flex items-center gap-3 hover:bg-accent/50 transition-colors text-left"
-                onClick={() => navigate('/profile')}
+                onClick={() => navigate('/settings')}
               >
                 <div className="w-10 h-10 rounded-xl bg-accent flex items-center justify-center">
                   <Settings className="w-5 h-5 text-accent-foreground" />

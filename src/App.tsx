@@ -16,6 +16,7 @@ import Matches from "./pages/Matches";
 import Messages from "./pages/Messages";
 import Chat from "./pages/Chat";
 import Profile from "./pages/Profile";
+import Settings from "./pages/Settings";
 import Privacy from "./pages/Privacy";
 import Safety from "./pages/Safety";
 import Contact from "./pages/Contact";
@@ -48,6 +49,7 @@ const App = () => (
               <Route path="/messages" element={<><ResponsiveHeader /><Messages /></>} />
               <Route path="/messages/:conversationId" element={<><ResponsiveHeader /><Chat /></>} />
               <Route path="/profile" element={<><ResponsiveHeader /><Profile /></>} />
+              <Route path="/settings" element={<><ResponsiveHeader /><Settings /></>} />
               <Route path="/privacy" element={<><ResponsiveHeader /><Privacy /></>} />
               <Route path="/safety" element={<><ResponsiveHeader /><Safety /></>} />
               <Route path="/contact" element={<><ResponsiveHeader /><Contact /></>} />
