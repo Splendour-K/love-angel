@@ -37,36 +37,48 @@ const App = () => (
         <Sonner />
         <BrowserRouter>
           <AuthProvider>
-            <AdminAuthProvider>
-              <Routes>
-                {/* Main App Routes */}
-                <Route path="/" element={<><ResponsiveHeader /><Landing /></>} />
-                <Route path="/auth" element={<><ResponsiveHeader /><Auth /></>} />
-                <Route path="/onboarding" element={<><ResponsiveHeader /><Onboarding /></>} />
-                <Route path="/discover" element={<><ResponsiveHeader /><Discover /></>} />
-                <Route path="/browse" element={<><ResponsiveHeader /><Browse /></>} />
-                <Route path="/matches" element={<><ResponsiveHeader /><Matches /></>} />
-                <Route path="/messages" element={<><ResponsiveHeader /><Messages /></>} />
-                <Route path="/messages/:conversationId" element={<><ResponsiveHeader /><Chat /></>} />
-                <Route path="/profile" element={<><ResponsiveHeader /><Profile /></>} />
-                <Route path="/privacy" element={<><ResponsiveHeader /><Privacy /></>} />
-                <Route path="/safety" element={<><ResponsiveHeader /><Safety /></>} />
-                <Route path="/contact" element={<><ResponsiveHeader /><Contact /></>} />
-                <Route path="/about" element={<><ResponsiveHeader /><About /></>} />
-                
-                {/* Admin Routes */}
-                <Route path="/admin/login" element={<AdminLogin />} />
-                <Route path="/admin" element={<AdminDashboard />}>
-                  <Route index element={<Navigate to="/admin/dashboard" replace />} />
-                  <Route path="dashboard" element={<div />} />
-                  <Route path="messages" element={<AdminMessages />} />
-                  <Route path="verifications" element={<AdminVerifications />} />
-                  <Route path="users" element={<AdminUsers />} />
-                </Route>
-                
-                <Route path="*" element={<><ResponsiveHeader /><NotFound /></>} />
-              </Routes>
-            </AdminAuthProvider>
+            <Routes>
+              {/* Main App Routes */}
+              <Route path="/" element={<><ResponsiveHeader /><Landing /></>} />
+              <Route path="/auth" element={<><ResponsiveHeader /><Auth /></>} />
+              <Route path="/onboarding" element={<><ResponsiveHeader /><Onboarding /></>} />
+              <Route path="/discover" element={<><ResponsiveHeader /><Discover /></>} />
+              <Route path="/browse" element={<><ResponsiveHeader /><Browse /></>} />
+              <Route path="/matches" element={<><ResponsiveHeader /><Matches /></>} />
+              <Route path="/messages" element={<><ResponsiveHeader /><Messages /></>} />
+              <Route path="/messages/:conversationId" element={<><ResponsiveHeader /><Chat /></>} />
+              <Route path="/profile" element={<><ResponsiveHeader /><Profile /></>} />
+              <Route path="/privacy" element={<><ResponsiveHeader /><Privacy /></>} />
+              <Route path="/safety" element={<><ResponsiveHeader /><Safety /></>} />
+              <Route path="/contact" element={<><ResponsiveHeader /><Contact /></>} />
+              <Route path="/about" element={<><ResponsiveHeader /><About /></>} />
+              
+              {/* Admin Routes (scoped provider) */}
+              <Route
+                path="/admin/login"
+                element={
+                  <AdminAuthProvider>
+                    <AdminLogin />
+                  </AdminAuthProvider>
+                }
+              />
+              <Route
+                path="/admin"
+                element={
+                  <AdminAuthProvider>
+                    <AdminDashboard />
+                  </AdminAuthProvider>
+                }
+              >
+                <Route index element={<Navigate to="/admin/dashboard" replace />} />
+                <Route path="dashboard" element={<div />} />
+                <Route path="messages" element={<AdminMessages />} />
+                <Route path="verifications" element={<AdminVerifications />} />
+                <Route path="users" element={<AdminUsers />} />
+              </Route>
+              
+              <Route path="*" element={<><ResponsiveHeader /><NotFound /></>} />
+            </Routes>
           </AuthProvider>
         </BrowserRouter>
       </TooltipProvider>
