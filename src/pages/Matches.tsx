@@ -23,16 +23,18 @@ export default function Matches() {
   const [loading, setLoading] = useState(true);
   const [myInterests, setMyInterests] = useState<string[]>([]);
 
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
+    if (authLoading) return;
+    
     if (!user) {
       navigate('/auth');
       return;
     }
     fetchMatches();
-  }, [user, navigate]);
+  }, [user, authLoading, navigate]);
 
   const fetchMatches = async () => {
     if (!user) return;

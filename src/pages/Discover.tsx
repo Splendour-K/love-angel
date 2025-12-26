@@ -48,17 +48,20 @@ export default function Discover() {
   // Full profile view state
   const [profileSheetOpen, setProfileSheetOpen] = useState(false);
 
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
 
   useEffect(() => {
+    // Wait for auth to finish loading before checking user
+    if (authLoading) return;
+    
     if (!user) {
       navigate('/auth');
       return;
     }
     fetchProfiles();
-  }, [user, navigate]);
+  }, [user, authLoading, navigate]);
 
   const fetchProfiles = async () => {
     if (!user) return;

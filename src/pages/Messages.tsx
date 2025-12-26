@@ -40,11 +40,13 @@ export default function Messages() {
   const [loading, setLoading] = useState(true);
   const [processingRequest, setProcessingRequest] = useState<string | null>(null);
 
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
 
   useEffect(() => {
+    if (authLoading) return;
+    
     if (!user) {
       navigate('/auth');
       return;
@@ -89,7 +91,7 @@ export default function Messages() {
       supabase.removeChannel(messageChannel);
       supabase.removeChannel(requestChannel);
     };
-  }, [user, navigate]);
+  }, [user, authLoading, navigate]);
 
   const fetchConversations = async () => {
     if (!user) return;

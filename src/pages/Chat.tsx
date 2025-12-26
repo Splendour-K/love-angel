@@ -39,11 +39,13 @@ export default function Chat() {
   const [showIceBreakers, setShowIceBreakers] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
 
   useEffect(() => {
+    if (authLoading) return;
+    
     if (!user || !conversationId) {
       navigate('/messages');
       return;
@@ -77,7 +79,7 @@ export default function Chat() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [user, conversationId, navigate]);
+  }, [user, authLoading, conversationId, navigate]);
 
   useEffect(() => {
     scrollToBottom();

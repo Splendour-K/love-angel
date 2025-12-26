@@ -1,7 +1,6 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
-import { useNavigate } from 'react-router-dom';
 import { validateUniversityEmail, getUniversityInfo } from '@/lib/universityValidation';
 
 interface AuthContextType {
@@ -19,6 +18,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const [initialized, setInitialized] = useState(false);
 
   useEffect(() => {
     // Set up auth state listener FIRST
@@ -26,19 +26,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       (event, session) => {
         setSession(session);
         setUser(session?.user ?? null);
-        setLoading(false);
+        // Only set loading false after initialization
+        if (initialized) {
+          setLoading(false);
+        }
       }
     );
 
-    // THEN check for existing session
+    // THEN check for existing session (only once on mount)
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);
+      setInitialized(true);
     });
 
     return () => subscription.unsubscribe();
-  }, []);
+  }, [initialized]);
 
   const signUp = async (email: string, password: string, firstName: string) => {
     // Comprehensive university email validation
