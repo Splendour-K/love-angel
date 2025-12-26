@@ -4,15 +4,17 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { StudentVerification } from '@/components/StudentVerification';
+import { PhotoUpload } from '@/components/PhotoUpload';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { 
   Heart, ArrowRight, ArrowLeft, User, Book, Calendar, 
-  Camera, Sparkles, Check
+  Camera, Sparkles, Check, Shield
 } from 'lucide-react';
 
-type Step = 'basics' | 'photos' | 'interests' | 'preferences';
+type Step = 'basics' | 'photos' | 'interests' | 'preferences' | 'verification';
 
 const interests = [
   'Reading', 'Music', 'Sports', 'Gaming', 'Travel', 'Cooking',
@@ -28,11 +30,8 @@ const relationshipGoals = [
 ];
 
 const genders = [
-  { value: 'male', label: 'Man' },
-  { value: 'female', label: 'Woman' },
-  { value: 'non_binary', label: 'Non-binary' },
-  { value: 'other', label: 'Other' },
-  { value: 'prefer_not_to_say', label: 'Prefer not to say' },
+  { value: 'male', label: 'Male' },
+  { value: 'female', label: 'Female' },
 ];
 
 export default function Onboarding() {
@@ -51,16 +50,27 @@ export default function Onboarding() {
   const [selectedInterests, setSelectedInterests] = useState<string[]>([]);
   const [relationshipGoal, setRelationshipGoal] = useState('');
   const [photos, setPhotos] = useState<string[]>([]);
+  const [verificationData, setVerificationData] = useState<any>(null);
 
   const { user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  const steps: Step[] = ['basics', 'photos', 'interests', 'preferences'];
+  const steps: Step[] = ['basics', 'photos', 'interests', 'preferences', 'verification'];
   const currentStepIndex = steps.indexOf(step);
   const progress = ((currentStepIndex + 1) / steps.length) * 100;
 
   const handleNext = () => {
+    // Validation for photos step
+    if (step === 'photos' && photos.length === 0) {
+      toast({
+        title: 'Add at least one photo',
+        description: 'Please add at least one photo to continue.',
+        variant: 'destructive',
+      });
+      return;
+    }
+    
     const nextStep = steps[currentStepIndex + 1];
     if (nextStep) setStep(nextStep);
   };
@@ -108,7 +118,9 @@ export default function Onboarding() {
         interests: selectedInterests,
         photos,
         is_complete: true,
-        is_verified: true,
+        is_verified: verificationData && !verificationData.skipped,
+        verification_data: verificationData,
+        verification_level: verificationData?.verificationLevel || 'basic',
       });
 
       if (error) throw error;
@@ -126,17 +138,6 @@ export default function Onboarding() {
       });
     } finally {
       setLoading(false);
-    }
-  };
-
-  const addPlaceholderPhoto = () => {
-    const placeholders = [
-      'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop',
-      'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400&h=400&fit=crop',
-      'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400&h=400&fit=crop',
-    ];
-    if (photos.length < 6) {
-      setPhotos([...photos, placeholders[photos.length % placeholders.length]]);
     }
   };
 
@@ -294,31 +295,13 @@ export default function Onboarding() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-3 gap-3 mb-4">
-                  {[...Array(6)].map((_, i) => (
-                    <div
-                      key={i}
-                      className={`aspect-square rounded-xl border-2 border-dashed flex items-center justify-center cursor-pointer transition-all ${
-                        photos[i]
-                          ? 'border-primary bg-primary/5'
-                          : 'border-border hover:border-primary hover:bg-accent'
-                      }`}
-                      onClick={addPlaceholderPhoto}
-                    >
-                      {photos[i] ? (
-                        <img
-                          src={photos[i]}
-                          alt={`Photo ${i + 1}`}
-                          className="w-full h-full object-cover rounded-xl"
-                        />
-                      ) : (
-                        <Camera className="w-8 h-8 text-muted-foreground" />
-                      )}
-                    </div>
-                  ))}
-                </div>
-                <p className="text-sm text-muted-foreground text-center">
-                  Click to add photos (add at least 1)
+                <PhotoUpload 
+                  photos={photos}
+                  onPhotosUpdate={setPhotos}
+                />
+                
+                <p className="text-sm text-muted-foreground text-center mt-4">
+                  Add at least 1 photo to continue
                 </p>
               </>
             )}
@@ -419,33 +402,64 @@ export default function Onboarding() {
               </>
             )}
 
-            {/* Navigation */}
-            <div className="flex items-center justify-between mt-8 pt-6 border-t border-border">
-              {currentStepIndex > 0 ? (
-                <Button variant="ghost" onClick={handleBack}>
-                  <ArrowLeft className="w-4 h-4" />
-                  Back
-                </Button>
-              ) : (
-                <div />
-              )}
+            {step === 'verification' && (
+              <>
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="w-12 h-12 rounded-xl bg-accent flex items-center justify-center">
+                    <Shield className="w-6 h-6 text-primary" />
+                  </div>
+                  <div>
+                    <h2 className="text-2xl font-display font-bold text-foreground">
+                      Verify Your Student Status
+                    </h2>
+                    <p className="text-muted-foreground">
+                      Help keep our community safe and authentic
+                    </p>
+                  </div>
+                </div>
 
-              {currentStepIndex < steps.length - 1 ? (
-                <Button variant="hero" onClick={handleNext}>
-                  Continue
-                  <ArrowRight className="w-4 h-4" />
-                </Button>
-              ) : (
-                <Button
-                  variant="hero"
-                  onClick={handleSubmit}
-                  disabled={loading}
-                >
-                  {loading ? 'Creating Profile...' : 'Complete Profile'}
-                  <Check className="w-4 h-4" />
-                </Button>
-              )}
-            </div>
+                <StudentVerification
+                  onComplete={(data) => {
+                    setVerificationData(data);
+                    handleSubmit(); // Complete the onboarding process
+                  }}
+                  onSkip={() => {
+                    setVerificationData({ skipped: true, timestamp: new Date().toISOString() });
+                    handleSubmit(); // Complete the onboarding process
+                  }}
+                />
+              </>
+            )}
+
+            {/* Navigation */}
+            {step !== 'verification' && (
+              <div className="flex items-center justify-between mt-8 pt-6 border-t border-border">
+                {currentStepIndex > 0 ? (
+                  <Button variant="ghost" onClick={handleBack}>
+                    <ArrowLeft className="w-4 h-4" />
+                    Back
+                  </Button>
+                ) : (
+                  <div />
+                )}
+
+                {currentStepIndex < steps.length - 1 ? (
+                  <Button variant="hero" onClick={handleNext}>
+                    Continue
+                    <ArrowRight className="w-4 h-4" />
+                  </Button>
+                ) : (
+                  <Button
+                    variant="hero"
+                    onClick={handleSubmit}
+                    disabled={loading}
+                  >
+                    {loading ? 'Creating Profile...' : 'Complete Profile'}
+                    <Check className="w-4 h-4" />
+                  </Button>
+                )}
+              </div>
+            )}
           </div>
         </div>
       </div>

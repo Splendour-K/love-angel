@@ -2,10 +2,11 @@ import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { IceBreakers } from '@/components/IceBreakers';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { ArrowLeft, Send, User, Shield, Flag, Ban } from 'lucide-react';
+import { ArrowLeft, Send, User, Shield, Flag, Ban, MessageCircle } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import {
   DropdownMenu,
@@ -35,6 +36,7 @@ export default function Chat() {
   const [otherUser, setOtherUser] = useState<OtherUser | null>(null);
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
+  const [showIceBreakers, setShowIceBreakers] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const { user } = useAuth();
@@ -132,6 +134,11 @@ export default function Chat() {
 
       if (error) throw error;
       setMessages(data || []);
+
+      // Show ice breakers if this is a new conversation (no messages)
+      if (!data || data.length === 0) {
+        setShowIceBreakers(true);
+      }
 
       // Mark unread messages as read
       const unreadIds = (data || [])
@@ -286,10 +293,41 @@ export default function Chat() {
               <p className="text-muted-foreground">Loading messages...</p>
             </div>
           ) : messages.length === 0 ? (
-            <div className="text-center py-8">
-              <p className="text-muted-foreground">
-                No messages yet. Start the conversation!
-              </p>
+            <div className="space-y-6">
+              <div className="text-center py-8">
+                <p className="text-muted-foreground mb-4">
+                  No messages yet. Start the conversation!
+                </p>
+                {showIceBreakers && (
+                  <Button
+                    variant="outline"
+                    onClick={() => setShowIceBreakers(!showIceBreakers)}
+                    className="flex items-center gap-2"
+                  >
+                    <MessageCircle className="w-4 h-4" />
+                    {showIceBreakers ? 'Hide' : 'Show'} Conversation Starters
+                  </Button>
+                )}
+              </div>
+              
+              {showIceBreakers && (
+                <div className="animate-in slide-in-from-bottom duration-300">
+                  <IceBreakers
+                    profile={otherUser ? {
+                      interests: [], // You'd need to fetch this from the profile
+                      university: '',
+                      course_of_study: '',
+                      relationship_goal: '',
+                      bio: ''
+                    } : undefined}
+                    onSelectPrompt={(prompt) => {
+                      setNewMessage(prompt);
+                      setShowIceBreakers(false);
+                    }}
+                    showSendButton={true}
+                  />
+                </div>
+              )}
             </div>
           ) : (
             messages.map((message) => {
@@ -327,23 +365,53 @@ export default function Chat() {
 
       {/* Input */}
       <div className="bg-card border-t border-border p-4 sticky bottom-0">
-        <form onSubmit={sendMessage} className="max-w-2xl mx-auto flex gap-3">
-          <Input
-            value={newMessage}
-            onChange={(e) => setNewMessage(e.target.value)}
-            placeholder="Type a message..."
-            className="flex-1"
-            disabled={sending}
-          />
-          <Button
-            type="submit"
-            variant="hero"
-            size="icon"
-            disabled={!newMessage.trim() || sending}
-          >
-            <Send className="w-5 h-5" />
-          </Button>
-        </form>
+        <div className="max-w-2xl mx-auto">
+          {showIceBreakers && messages.length > 0 && (
+            <div className="mb-4 animate-in slide-in-from-bottom duration-300">
+              <IceBreakers
+                profile={otherUser ? {
+                  interests: [],
+                  university: '',
+                  course_of_study: '',
+                  relationship_goal: '',
+                  bio: ''
+                } : undefined}
+                onSelectPrompt={(prompt) => {
+                  setNewMessage(prompt);
+                  setShowIceBreakers(false);
+                }}
+                showSendButton={true}
+              />
+            </div>
+          )}
+          
+          <form onSubmit={sendMessage} className="flex gap-3">
+            <Input
+              value={newMessage}
+              onChange={(e) => setNewMessage(e.target.value)}
+              placeholder="Type a message..."
+              className="flex-1"
+              disabled={sending}
+            />
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              onClick={() => setShowIceBreakers(!showIceBreakers)}
+              className="shrink-0"
+            >
+              <MessageCircle className="w-5 h-5" />
+            </Button>
+            <Button
+              type="submit"
+              variant="hero"
+              size="icon"
+              disabled={!newMessage.trim() || sending}
+            >
+              <Send className="w-5 h-5" />
+            </Button>
+          </form>
+        </div>
       </div>
     </div>
   );

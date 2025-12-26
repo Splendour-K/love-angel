@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
+import { ThemeToggle } from '@/components/ThemeToggle';
 import { Heart, Shield, GraduationCap, MessageCircle, Users, Sparkles } from 'lucide-react';
 
 export default function Landing() {
@@ -14,6 +15,7 @@ export default function Landing() {
           <span className="text-xl font-display font-semibold text-foreground">UniMatch</span>
         </div>
         <div className="flex items-center gap-4">
+          <ThemeToggle />
           <Link to="/auth">
             <Button variant="ghost" size="sm">Sign In</Button>
           </Link>

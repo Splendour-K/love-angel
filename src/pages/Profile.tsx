@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { ThemeToggleButton } from '@/components/ThemeToggle';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -12,6 +13,7 @@ import {
   Shield, ChevronRight 
 } from 'lucide-react';
 import BottomNav from '@/components/BottomNav';
+import { PhotoUpload } from '@/components/PhotoUpload';
 
 interface ProfileData {
   display_name: string;
@@ -84,6 +86,14 @@ export default function Profile() {
     setEditing(false);
   };
 
+  const handlePhotosUpdate = (photos: string[]) => {
+    if (editing && editedProfile) {
+      setEditedProfile({ ...editedProfile, photos });
+    } else {
+      setProfile(prev => prev ? { ...prev, photos } : null);
+    }
+  };
+
   const handleSave = async () => {
     if (!user || !editedProfile) return;
 
@@ -135,35 +145,32 @@ export default function Profile() {
   };
 
   return (
-    <div className="min-h-screen gradient-hero pb-24">
+    <div className="min-h-screen gradient-hero pb-24 pt-16 md:pt-20">
       {/* Header */}
       <header className="container mx-auto px-4 py-6 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <div className="w-10 h-10 gradient-primary rounded-xl flex items-center justify-center shadow-soft">
-            <User className="w-5 h-5 text-primary-foreground" />
-          </div>
-          <span className="text-xl font-display font-semibold text-foreground">Profile</span>
-        </div>
+        <h1 className="text-xl font-display font-semibold text-foreground">Profile</h1>
 
-        {!editing ? (
-          <Button variant="ghost" size="icon" onClick={handleEdit}>
-            <Edit2 className="w-5 h-5" />
-          </Button>
-        ) : (
-          <div className="flex gap-2">
-            <Button variant="ghost" size="icon" onClick={handleCancel}>
-              <X className="w-5 h-5" />
+        <div className="flex items-center gap-2">
+          {!editing ? (
+            <Button variant="ghost" size="icon" onClick={handleEdit}>
+              <Edit2 className="w-5 h-5" />
             </Button>
-            <Button
-              variant="default"
-              size="icon"
-              onClick={handleSave}
-              disabled={saving}
-            >
-              <Check className="w-5 h-5" />
-            </Button>
-          </div>
-        )}
+          ) : (
+            <div className="flex gap-2">
+              <Button variant="ghost" size="icon" onClick={handleCancel}>
+                <X className="w-5 h-5" />
+              </Button>
+              <Button
+                variant="default"
+                size="icon"
+                onClick={handleSave}
+                disabled={saving}
+              >
+                <Check className="w-5 h-5" />
+              </Button>
+            </div>
+          )}
+        </div>
       </header>
 
       <main className="container mx-auto px-4">
@@ -181,28 +188,33 @@ export default function Profile() {
             </Button>
           </div>
         ) : (
-          <div className="max-w-md mx-auto space-y-6">
-            {/* Profile Photo */}
-            <div className="relative w-32 h-32 mx-auto">
-              <div className="w-full h-full rounded-full overflow-hidden bg-muted shadow-card">
-                {profile.photos?.length > 0 ? (
-                  <img
-                    src={profile.photos[0]}
-                    alt={profile.display_name}
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center">
-                    <User className="w-16 h-16 text-muted-foreground" />
-                  </div>
-                )}
+          <div className="max-w-2xl mx-auto space-y-6">
+            {/* Photo Upload Section */}
+            {editing ? (
+              <div className="bg-card rounded-2xl p-6 shadow-card">
+                <PhotoUpload
+                  photos={editedProfile?.photos || []}
+                  onPhotosUpdate={handlePhotosUpdate}
+                  maxPhotos={6}
+                />
               </div>
-              {editing && (
-                <button className="absolute bottom-0 right-0 w-10 h-10 gradient-primary rounded-full flex items-center justify-center shadow-soft">
-                  <Camera className="w-5 h-5 text-primary-foreground" />
-                </button>
-              )}
-            </div>
+            ) : (
+              <div className="relative w-32 h-32 mx-auto">
+                <div className="w-full h-full rounded-full overflow-hidden bg-muted shadow-card">
+                  {profile.photos?.length > 0 ? (
+                    <img
+                      src={profile.photos[0]}
+                      alt={profile.display_name}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center">
+                      <User className="w-16 h-16 text-muted-foreground" />
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
 
             {/* Profile Info */}
             <div className="bg-card rounded-2xl p-6 shadow-card space-y-5">

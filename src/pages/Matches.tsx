@@ -139,17 +139,7 @@ export default function Matches() {
   };
 
   return (
-    <div className="min-h-screen gradient-hero pb-24">
-      {/* Header */}
-      <header className="container mx-auto px-4 py-6">
-        <div className="flex items-center gap-2">
-          <div className="w-10 h-10 gradient-primary rounded-xl flex items-center justify-center shadow-soft">
-            <Heart className="w-5 h-5 text-primary-foreground" />
-          </div>
-          <span className="text-xl font-display font-semibold text-foreground">Matches</span>
-        </div>
-      </header>
-
+    <div className="min-h-screen gradient-hero pb-24 pt-16 md:pt-20">
       <main className="container mx-auto px-4">
         {loading ? (
           <div className="flex items-center justify-center h-[50vh]">

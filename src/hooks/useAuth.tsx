@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useState, ReactNode } from 'react
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
+import { validateUniversityEmail, getUniversityInfo } from '@/lib/universityValidation';
 
 interface AuthContextType {
   user: User | null;
@@ -40,13 +41,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const signUp = async (email: string, password: string, firstName: string) => {
-    // Validate university email
-    const universityDomains = ['.edu', '.ac.uk', '.edu.au', '.ac.nz', '.edu.sg', 'university', 'college', 'uni.'];
-    const isUniversityEmail = universityDomains.some(domain => email.toLowerCase().includes(domain));
+    // Comprehensive university email validation
+    const validation = validateUniversityEmail(email);
     
-    if (!isUniversityEmail) {
-      return { error: new Error('Please use a valid university email address (.edu, .ac.uk, etc.)') };
+    if (!validation.isValid) {
+      return { 
+        error: new Error(`Invalid university email: ${validation.reason}. Please use your official university email address.`) 
+      };
     }
+
+    // Get university information if available
+    const universityInfo = getUniversityInfo(email);
 
     const redirectUrl = `${window.location.origin}/`;
     
@@ -57,6 +62,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         emailRedirectTo: redirectUrl,
         data: {
           first_name: firstName,
+          email_validation: {
+            confidence: validation.confidence,
+            domain: validation.domain,
+            country: validation.country,
+          },
+          university_info: universityInfo,
         }
       }
     });

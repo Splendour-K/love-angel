@@ -3,10 +3,12 @@ import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { EmailValidationInput } from '@/components/EmailValidationInput';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { Heart, Mail, Lock, User, ArrowRight, GraduationCap } from 'lucide-react';
 import { z } from 'zod';
+import { UniversityValidationResult } from '@/lib/universityValidation';
 
 const signUpSchema = z.object({
   firstName: z.string().min(2, 'First name must be at least 2 characters'),
@@ -27,6 +29,8 @@ export default function Auth() {
   const [firstName, setFirstName] = useState('');
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [emailValidation, setEmailValidation] = useState<UniversityValidationResult | null>(null);
+  const [isEmailValid, setIsEmailValid] = useState(false);
 
   const { signIn, signUp, user } = useAuth();
   const navigate = useNavigate();
@@ -45,6 +49,13 @@ export default function Auth() {
 
     try {
       if (isSignUp) {
+        // Additional email validation check for signup
+        if (!isEmailValid || !emailValidation?.isValid) {
+          setErrors({ email: 'Please provide a valid university email address' });
+          setLoading(false);
+          return;
+        }
+
         const result = signUpSchema.safeParse({ firstName, email, password });
         if (!result.success) {
           const fieldErrors: Record<string, string> = {};
@@ -164,26 +175,34 @@ export default function Auth() {
               )}
 
               <div className="space-y-2">
-                <Label htmlFor="email">University Email</Label>
-                <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-                  <Input
-                    id="email"
-                    type="email"
-                    placeholder="you@university.edu"
+                {isSignUp ? (
+                  <EmailValidationInput
                     value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="pl-10"
+                    onChange={setEmail}
+                    error={errors.email}
+                    onValidationChange={(isValid, validation) => {
+                      setIsEmailValid(isValid);
+                      setEmailValidation(validation);
+                    }}
                   />
-                </div>
-                {errors.email && (
-                  <p className="text-sm text-destructive">{errors.email}</p>
-                )}
-                {isSignUp && (
-                  <p className="text-xs text-muted-foreground flex items-center gap-1">
-                    <GraduationCap className="w-3 h-3" />
-                    Only .edu and university emails are accepted
-                  </p>
+                ) : (
+                  <>
+                    <Label htmlFor="email">University Email</Label>
+                    <div className="relative">
+                      <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                      <Input
+                        id="email"
+                        type="email"
+                        placeholder="you@university.edu"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        className="pl-10"
+                      />
+                    </div>
+                    {errors.email && (
+                      <p className="text-sm text-destructive">{errors.email}</p>
+                    )}
+                  </>
                 )}
               </div>
 
