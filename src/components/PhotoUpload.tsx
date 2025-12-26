@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
-import { Upload, X, Edit, Plus, Trash2 } from 'lucide-react';
+import { Upload, X, Edit, Plus, Trash2, Loader2 } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -12,6 +12,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { Progress } from '@/components/ui/progress';
 
 interface PhotoUploadProps {
   photos: string[];
@@ -19,8 +20,51 @@ interface PhotoUploadProps {
   maxPhotos?: number;
 }
 
+// Compress image before upload
+const compressImage = (file: File, maxWidth = 1200, maxHeight = 1200, quality = 0.8): Promise<Blob> => {
+  return new Promise((resolve, reject) => {
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    const img = new Image();
+
+    img.onload = () => {
+      let { width, height } = img;
+
+      // Calculate new dimensions while maintaining aspect ratio
+      if (width > maxWidth || height > maxHeight) {
+        const ratio = Math.min(maxWidth / width, maxHeight / height);
+        width = Math.round(width * ratio);
+        height = Math.round(height * ratio);
+      }
+
+      canvas.width = width;
+      canvas.height = height;
+
+      // Draw image on canvas
+      ctx?.drawImage(img, 0, 0, width, height);
+
+      // Convert to blob
+      canvas.toBlob(
+        (blob) => {
+          if (blob) {
+            resolve(blob);
+          } else {
+            reject(new Error('Failed to compress image'));
+          }
+        },
+        'image/jpeg',
+        quality
+      );
+    };
+
+    img.onerror = () => reject(new Error('Failed to load image'));
+    img.src = URL.createObjectURL(file);
+  });
+};
+
 export function PhotoUpload({ photos, onPhotosUpdate, maxPhotos = 6 }: PhotoUploadProps) {
   const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
   const [selectedPhoto, setSelectedPhoto] = useState<string | null>(null);
   const [showDeleteDialog, setShowDeleteDialog] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -32,27 +76,52 @@ export function PhotoUpload({ photos, onPhotosUpdate, maxPhotos = 6 }: PhotoUplo
 
     try {
       setUploading(true);
+      setUploadProgress(10);
 
       // Validate file
       if (!file.type.startsWith('image/')) {
         throw new Error('Please select an image file');
       }
 
-      if (file.size > 5 * 1024 * 1024) {
-        throw new Error('Image must be less than 5MB');
+      // Show compressing status
+      setUploadProgress(20);
+
+      // Compress the image
+      let fileToUpload: Blob | File = file;
+      if (file.size > 500 * 1024) { // Compress if larger than 500KB
+        try {
+          fileToUpload = await compressImage(file);
+          setUploadProgress(50);
+        } catch (compressError) {
+          console.warn('Compression failed, using original file:', compressError);
+          // Continue with original file if compression fails
+        }
+      } else {
+        setUploadProgress(50);
+      }
+
+      // Check final size (allow up to 5MB after compression attempt)
+      if (fileToUpload.size > 5 * 1024 * 1024) {
+        throw new Error('Image is too large. Please select a smaller image.');
       }
 
       // Create a unique filename
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
+      const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.jpg`;
       const filePath = `${user.id}/${fileName}`;
+
+      setUploadProgress(60);
 
       // Upload to Supabase Storage
       const { error: uploadError } = await supabase.storage
         .from('avatars')
-        .upload(filePath, file);
+        .upload(filePath, fileToUpload, {
+          contentType: 'image/jpeg',
+          cacheControl: '3600',
+        });
 
       if (uploadError) throw uploadError;
+
+      setUploadProgress(80);
 
       // Get public URL
       const { data: { publicUrl } } = supabase.storage
@@ -63,6 +132,8 @@ export function PhotoUpload({ photos, onPhotosUpdate, maxPhotos = 6 }: PhotoUplo
       const newPhotos = [...photos, publicUrl];
       onPhotosUpdate(newPhotos);
 
+      setUploadProgress(90);
+
       // Update profile in database
       const { error: updateError } = await supabase
         .from('profiles')
@@ -70,6 +141,8 @@ export function PhotoUpload({ photos, onPhotosUpdate, maxPhotos = 6 }: PhotoUplo
         .eq('user_id', user.id);
 
       if (updateError) throw updateError;
+
+      setUploadProgress(100);
 
       toast({
         title: 'Photo uploaded',
@@ -85,6 +158,7 @@ export function PhotoUpload({ photos, onPhotosUpdate, maxPhotos = 6 }: PhotoUplo
       });
     } finally {
       setUploading(false);
+      setUploadProgress(0);
     }
   };
 
@@ -175,14 +249,27 @@ export function PhotoUpload({ photos, onPhotosUpdate, maxPhotos = 6 }: PhotoUplo
             className="flex items-center gap-2"
           >
             {uploading ? (
-              <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+              <Loader2 className="w-4 h-4 animate-spin" />
             ) : (
               <Plus className="w-4 h-4" />
             )}
-            Add Photo
+            {uploading ? 'Uploading...' : 'Add Photo'}
           </Button>
         )}
       </div>
+
+      {/* Upload Progress Bar */}
+      {uploading && (
+        <div className="space-y-2">
+          <div className="flex items-center justify-between text-sm">
+            <span className="text-muted-foreground">
+              {uploadProgress < 50 ? 'Compressing image...' : 'Uploading...'}
+            </span>
+            <span className="text-muted-foreground">{uploadProgress}%</span>
+          </div>
+          <Progress value={uploadProgress} className="h-2" />
+        </div>
+      )}
 
       <input
         ref={fileInputRef}
