@@ -57,6 +57,8 @@ export function ResponsiveHeader({ showNavigation = true }: ResponsiveHeaderProp
   useEffect(() => {
     if (!user) return;
 
+    let cancelled = false;
+
     const fetchData = async () => {
       // Fetch profile photo
       const { data: profile } = await supabase
@@ -64,9 +66,9 @@ export function ResponsiveHeader({ showNavigation = true }: ResponsiveHeaderProp
         .select('photos')
         .eq('user_id', user.id)
         .single();
-      
-      if (profile?.photos?.[0]) {
-        setAvatarUrl(profile.photos[0]);
+
+      if (!cancelled) {
+        setAvatarUrl(profile?.photos?.[0] ?? null);
       }
 
       // Fetch unread messages count (messages not sent by user)
@@ -75,15 +77,20 @@ export function ResponsiveHeader({ showNavigation = true }: ResponsiveHeaderProp
         .select('id')
         .or(`user1_id.eq.${user.id},user2_id.eq.${user.id}`);
 
-      if (conversations?.length) {
-        const conversationIds = conversations.map(c => c.id);
-        const { count } = await supabase
-          .from('messages')
-          .select('*', { count: 'exact', head: true })
-          .in('conversation_id', conversationIds)
-          .neq('sender_id', user.id)
-          .eq('is_read', false);
-        
+      if (!conversations?.length) {
+        if (!cancelled) setUnreadCount(0);
+        return;
+      }
+
+      const conversationIds = conversations.map((convo) => convo.id);
+      const { count } = await supabase
+        .from('messages')
+        .select('*', { count: 'exact', head: true })
+        .in('conversation_id', conversationIds)
+        .neq('sender_id', user.id)
+        .eq('is_read', false);
+
+      if (!cancelled) {
         setUnreadCount(count || 0);
       }
     };
@@ -103,6 +110,7 @@ export function ResponsiveHeader({ showNavigation = true }: ResponsiveHeaderProp
       .subscribe();
 
     return () => {
+      cancelled = true;
       supabase.removeChannel(channel);
     };
   }, [user]);
