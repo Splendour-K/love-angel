@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/integrations/supabase/client';
 import {
   Sheet,
   SheetContent,
@@ -46,9 +47,65 @@ interface ResponsiveHeaderProps {
 
 export function ResponsiveHeader({ showNavigation = true }: ResponsiveHeaderProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [unreadCount, setUnreadCount] = useState(0);
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+
+  // Fetch user avatar and unread count
+  useEffect(() => {
+    if (!user) return;
+
+    const fetchData = async () => {
+      // Fetch profile photo
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('photos')
+        .eq('user_id', user.id)
+        .single();
+      
+      if (profile?.photos?.[0]) {
+        setAvatarUrl(profile.photos[0]);
+      }
+
+      // Fetch unread messages count (messages not sent by user)
+      const { data: conversations } = await supabase
+        .from('conversations')
+        .select('id')
+        .or(`user1_id.eq.${user.id},user2_id.eq.${user.id}`);
+
+      if (conversations?.length) {
+        const conversationIds = conversations.map(c => c.id);
+        const { count } = await supabase
+          .from('messages')
+          .select('*', { count: 'exact', head: true })
+          .in('conversation_id', conversationIds)
+          .neq('sender_id', user.id)
+          .eq('is_read', false);
+        
+        setUnreadCount(count || 0);
+      }
+    };
+
+    fetchData();
+
+    // Subscribe to new messages for real-time unread updates
+    const channel = supabase
+      .channel('header-messages')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'messages' },
+        () => {
+          fetchData();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user]);
 
   const handleSignOut = async () => {
     await signOut();
@@ -103,14 +160,21 @@ export function ResponsiveHeader({ showNavigation = true }: ResponsiveHeaderProp
               </nav>
             )}
 
-            {/* Right side */}
             <div className="flex items-center gap-2">
               <ThemeToggle />
               
-              <Button variant="ghost" size="icon" className="relative">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="relative"
+                onClick={() => navigate('/messages')}
+              >
                 <Bell className="w-4 h-4" />
-                {/* Notification badge placeholder */}
-                <span className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full"></span>
+                {unreadCount > 0 && (
+                  <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] bg-red-500 rounded-full text-[10px] font-medium text-white flex items-center justify-center px-1">
+                    {unreadCount > 99 ? '99+' : unreadCount}
+                  </span>
+                )}
               </Button>
 
               {/* User Menu */}
@@ -118,7 +182,7 @@ export function ResponsiveHeader({ showNavigation = true }: ResponsiveHeaderProp
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" className="relative h-8 w-8 rounded-full">
                     <Avatar className="h-8 w-8">
-                      <AvatarImage src="/placeholder-avatar.jpg" alt="Profile" />
+                      <AvatarImage src={avatarUrl || undefined} alt="Profile" />
                       <AvatarFallback>
                         {user?.user_metadata?.first_name?.charAt(0) || user?.email?.charAt(0) || 'U'}
                       </AvatarFallback>
@@ -145,11 +209,11 @@ export function ResponsiveHeader({ showNavigation = true }: ResponsiveHeaderProp
                     <Settings className="mr-2 h-4 w-4" />
                     <span>Settings</span>
                   </DropdownMenuItem>
-                  <DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => navigate('/safety')}>
                     <Shield className="mr-2 h-4 w-4" />
                     <span>Safety & Privacy</span>
                   </DropdownMenuItem>
-                  <DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => navigate('/contact')}>
                     <HelpCircle className="mr-2 h-4 w-4" />
                     <span>Help & Support</span>
                   </DropdownMenuItem>
@@ -183,9 +247,18 @@ export function ResponsiveHeader({ showNavigation = true }: ResponsiveHeaderProp
             <div className="flex items-center gap-2">
               <ThemeToggle />
               
-              <Button variant="ghost" size="icon" className="relative">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="relative"
+                onClick={() => navigate('/messages')}
+              >
                 <Bell className="w-4 h-4" />
-                <span className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full"></span>
+                {unreadCount > 0 && (
+                  <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] bg-red-500 rounded-full text-[10px] font-medium text-white flex items-center justify-center px-1">
+                    {unreadCount > 99 ? '99+' : unreadCount}
+                  </span>
+                )}
               </Button>
 
               <Sheet open={isOpen} onOpenChange={setIsOpen}>
@@ -207,7 +280,7 @@ export function ResponsiveHeader({ showNavigation = true }: ResponsiveHeaderProp
                     {/* User Info */}
                     <div className="flex items-center gap-3 p-3 bg-accent/50 rounded-lg">
                       <Avatar className="h-10 w-10">
-                        <AvatarImage src="/placeholder-avatar.jpg" alt="Profile" />
+                        <AvatarImage src={avatarUrl || undefined} alt="Profile" />
                         <AvatarFallback>
                           {user?.user_metadata?.first_name?.charAt(0) || user?.email?.charAt(0) || 'U'}
                         </AvatarFallback>
@@ -293,6 +366,10 @@ export function ResponsiveHeader({ showNavigation = true }: ResponsiveHeaderProp
                       <Button
                         variant="ghost"
                         className="w-full justify-start gap-3 h-auto p-3"
+                        onClick={() => {
+                          navigate('/safety');
+                          setIsOpen(false);
+                        }}
                       >
                         <Shield className="w-5 h-5" />
                         <div className="text-left">
@@ -304,6 +381,10 @@ export function ResponsiveHeader({ showNavigation = true }: ResponsiveHeaderProp
                       <Button
                         variant="ghost"
                         className="w-full justify-start gap-3 h-auto p-3"
+                        onClick={() => {
+                          navigate('/contact');
+                          setIsOpen(false);
+                        }}
                       >
                         <HelpCircle className="w-5 h-5" />
                         <div className="text-left">

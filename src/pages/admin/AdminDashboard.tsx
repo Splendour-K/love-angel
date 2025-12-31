@@ -10,7 +10,6 @@ import {
   UserCheck,
   Users,
   FileText,
-  Settings,
   LogOut,
   Menu,
   X,
@@ -120,8 +119,6 @@ export default function AdminDashboard() {
     { icon: MessageSquare, label: 'Messages', path: '/admin/messages' },
     { icon: UserCheck, label: 'Verifications', path: '/admin/verifications' },
     { icon: Users, label: 'Users', path: '/admin/users' },
-    { icon: FileText, label: 'Reports', path: '/admin/reports' },
-    { icon: Settings, label: 'Settings', path: '/admin/settings' },
   ];
 
   const isActivePath = (path: string) => location.pathname === path;
@@ -312,11 +309,11 @@ function DashboardHome({ stats, onRefresh }: { stats: DashboardStats; onRefresh:
               <span className="text-white">Monitor messages</span>
             </Link>
             <Link
-              to="/admin/reports"
+              to="/admin/users"
               className="flex items-center gap-3 p-3 rounded-lg bg-slate-700/50 hover:bg-slate-700 transition-colors"
             >
-              <FileText className="w-5 h-5 text-red-400" />
-              <span className="text-white">Review user reports</span>
+              <Users className="w-5 h-5 text-purple-400" />
+              <span className="text-white">Manage users</span>
             </Link>
           </div>
         </div>
